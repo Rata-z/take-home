@@ -2,13 +2,20 @@ import { useEffect, useState } from "react";
 import { ListItem, useGetListData } from "../api/getListData";
 import { Card } from "./List";
 import { Spinner } from "./Spinner";
+import { ToggleButton } from "./Buttons";
+import { useCardActions } from "../libs/hooks";
 
 export const Entrypoint = () => {
   const [visibleCards, setVisibleCards] = useState<ListItem[]>([]);
+  const [revealed, setRevealed] = useState<Boolean>(false);
   const listQuery = useGetListData();
-
-  // TOOD
-  // const deletedCards: DeletedListItem[] = [];
+  const {
+    handleExpandCollapse,
+    deletedCards,
+    awesomeListCards,
+    deleteCard,
+    expandedCardsIds,
+  } = useCardActions(visibleCards);
 
   useEffect(() => {
     if (listQuery.isLoading) {
@@ -23,30 +30,45 @@ export const Entrypoint = () => {
   }
 
   return (
-    <div className="flex gap-x-16">
-      <div className="w-full max-w-xl">
-        <h1 className="mb-1 font-medium text-lg">My Awesome List ({visibleCards.length})</h1>
+    <div className="flex w-full justify-center  gap-x-16">
+      <div className="flex flex-col w-full max-w-xl ">
+        <div className="flex items-center justify-between">
+          <h1 className="mb-1 font-medium text-lg">
+            My Awesome List ({awesomeListCards.length})
+          </h1>
+          <ToggleButton onClick={() => listQuery.refetch()}>
+            Refresh
+          </ToggleButton>
+        </div>
         <div className="flex flex-col gap-y-3">
-          {visibleCards.map((card) => (
-            <Card key={card.id} title={card.title} description={card.description} />
+          {awesomeListCards.map((card) => (
+            <Card
+              key={card.id}
+              handleDelete={() => deleteCard(card.id)}
+              handleExpandCollapse={() => handleExpandCollapse(card.id)}
+              isExpanded={expandedCardsIds.includes(card.id)}
+              title={card.title}
+              description={card.description}
+            />
           ))}
         </div>
       </div>
-      <div className="w-full max-w-xl">
+      <div className="flex flex-col w-full max-w-xl">
         <div className="flex items-center justify-between">
-          <h1 className="mb-1 font-medium text-lg">Deleted Cards (0)</h1>
-          <button
-            disabled
-            className="text-white text-sm transition-colors hover:bg-gray-800 disabled:bg-black/75 bg-black rounded px-3 py-1"
-          >
+          <h1 className="mb-1 font-medium text-lg">
+            Deleted Cards ({deletedCards.length})
+          </h1>
+          <ToggleButton onClick={() => setRevealed((prev) => !prev)}>
             Reveal
-          </button>
+          </ToggleButton>
         </div>
-        <div className="flex flex-col gap-y-3">
-          {/* {deletedCards.map((card) => (
-            <Card key={card.id} card={card} />
-          ))} */}
-        </div>
+        {revealed && (
+          <div className="flex flex-col gap-y-3">
+            {deletedCards.map((card) => (
+              <Card key={card.id} isDeleted title={card.title} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
